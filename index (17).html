@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TechZone — Custom PCs, Assembled &amp; Tested In-House</title>
+<meta name="description" content="TechZone builds custom desktop PCs to your exact spec. New parts only, tuned, cable-managed, and stress-tested before shipping. Design your build and we handle the rest." />
+
+<!-- React, ReactDOM, Babel (in-browser JSX) — all via CDN, no build step -->
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  html, body { margin:0; padding:0; background:#0B0E13; }
+  /* ---- All component styles injected by React below via CSS constant ---- */
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- =========================================================
+     TechZone app. JSX is compiled in the browser by Babel.
+     To edit content (prices, builds, contact info, copy),
+     scroll to the data section near the top of this script.
+     ========================================================= -->
+<script type="text/babel" data-type="module">
+const { useState, useMemo, useRef, useEffect, useCallback } = React;
+
+/* ============================================================
+   EDIT YOUR DATA HERE
+   ============================================================ */
+
+// ---- CONTACT INFO — change these to your real details ----
+const CONTACT = {
+  email: "contact@techzone.build",
+  phone: "(239) 555-0142",
+  location: "Naples, Florida",
+  hours: "Mon–Sat · 10am – 7pm ET",
+  instagram: "@techzone.builds",
+};
+
+// PART CATALOG.
+// Each part has an optional "img" field — paste a manufacturer product
+// image URL (or a filename you've uploaded to the repo, e.g. "parts/9800x3d.jpg").
+// If img is empty, a clean labeled placeholder shows instead.
+const CATALOG = {
+  cpu: [
+    { id: "9800x3d", name: "AMD Ryzen 7 9800X3D", price: 479, brand: "AMD", socket: "AM5", tdp: 120, tag: "Best for gaming", img: "" },
+    { id: "9700x", name: "AMD Ryzen 7 9700X", price: 329, brand: "AMD", socket: "AM5", tdp: 65, img: "" },
+    { id: "9900x3d", name: "AMD Ryzen 9 9900X3D", price: 599, brand: "AMD", socket: "AM5", tdp: 120, img: "" },
+    { id: "265k", name: "Intel Core Ultra 7 265K", price: 394, brand: "Intel", socket: "LGA1851", tdp: 125, img: "" },
+    { id: "285k", name: "Intel Core Ultra 9 285K", price: 589, brand: "Intel", socket: "LGA1851", tdp: 125, tag: "Flagship", img: "" },
+  ],
+  mobo: [
+    { id: "x870e-ice", name: "Gigabyte X870E Aorus Pro ICE", price: 349, brand: "Gigabyte", socket: "AM5", mem: "DDR5", color: "white", tag: "White build", img: "" },
+    { id: "b650-aorus", name: "Gigabyte B650 Aorus Elite AX", price: 199, brand: "Gigabyte", socket: "AM5", mem: "DDR5", img: "" },
+    { id: "x870-tomahawk", name: "MSI X870 Tomahawk WiFi", price: 289, brand: "MSI", socket: "AM5", mem: "DDR5", img: "" },
+    { id: "z890-pro", name: "ASUS ROG Strix Z890-A", price: 399, brand: "ASUS", socket: "LGA1851", mem: "DDR5", color: "white", img: "" },
+  ],
+  ram: [
+    { id: "cl30-6000", name: "Corsair Vengeance 32GB DDR5-6000 CL30", price: 134, brand: "Corsair", mem: "DDR5", color: "white", tag: "Sweet spot", img: "" },
+    { id: "cl36-6000", name: "G.Skill Trident Z5 32GB DDR5-6000 CL36", price: 119, brand: "G.Skill", mem: "DDR5", color: "white", img: "" },
+    { id: "cl30-64", name: "Corsair Dominator 64GB DDR5-6000 CL30", price: 264, brand: "Corsair", mem: "DDR5", img: "" },
+  ],
+  gpu: [
+    { id: "5070ti-apoc", name: "Zotac RTX 5070 Ti Apocalypse", price: 849, brand: "Zotac", power: 300, color: "white", tag: "Editor's pick", img: "" },
+    { id: "5070", name: "Zotac RTX 5070 Solid", price: 599, brand: "Zotac", power: 250, img: "" },
+    { id: "5080", name: "ASUS RTX 5080 TUF", price: 1199, brand: "ASUS", power: 360, color: "white", img: "" },
+    { id: "5090", name: "Gigabyte RTX 5090 Aorus", price: 2499, brand: "Gigabyte", power: 575, tag: "Extreme 4K", img: "" },
+  ],
+  storage: [
+    { id: "2tb-980", name: "Samsung 990 Pro 2TB NVMe", price: 169, brand: "Samsung", tag: "Fast", img: "" },
+    { id: "1tb-p3", name: "Crucial P3 Plus 1TB NVMe", price: 79, brand: "Crucial", img: "" },
+    { id: "4tb-990", name: "Samsung 990 Pro 4TB NVMe", price: 329, brand: "Samsung", img: "" },
+  ],
+  psu: [
+    { id: "1000-sama", name: "Sama P1000W 80+ Gold ATX 3.1", price: 139, brand: "Sama", watts: 1000, color: "white", img: "" },
+    { id: "850-rm", name: "Corsair RM850x 80+ Gold", price: 144, brand: "Corsair", watts: 850, img: "" },
+    { id: "750-focus", name: "Seasonic Focus GX-750", price: 119, brand: "Seasonic", watts: 750, img: "" },
+  ],
+  cooler: [
+    { id: "kraken-360", name: "NZXT Kraken Plus 360 LCD", price: 219, brand: "NZXT", color: "white", tag: "LCD screen", img: "" },
+    { id: "ll360", name: "Lian Li Galahad II 360", price: 159, brand: "Lian Li", color: "white", img: "" },
+    { id: "air-peerless", name: "Thermalright Peerless Assassin", price: 39, brand: "Thermalright", img: "" },
+  ],
+  case: [
+    { id: "king95", name: "Montech King 95 PRO", price: 119, brand: "Montech", color: "white", tag: "Dual chamber", img: "" },
+    { id: "king45", name: "Montech King 45 PRO", price: 99, brand: "Montech", color: "white", img: "" },
+    { id: "o11", name: "Lian Li O11 Dynamic EVO", price: 169, brand: "Lian Li", color: "black", img: "" },
+  ],
+};
+
+const CATEGORY_META = [
+  { key: "cpu", label: "Processor" },
+  { key: "mobo", label: "Motherboard" },
+  { key: "ram", label: "Memory" },
+  { key: "gpu", label: "Graphics" },
+  { key: "storage", label: "Storage" },
+  { key: "psu", label: "Power Supply" },
+  { key: "cooler", label: "Cooling" },
+  { key: "case", label: "Case" },
+];
+
+// ---- HERO IMAGE — your best build photo for the home page. Leave "" for placeholder. ----
+const HERO_PHOTO = "";
+
+// ---- SHOWCASE BUILDS — swap in your real builds + prices ----
+// ============================================================
+// YOUR BUILDS — the real machines you've completed.
+// For each: set "name", a short "blurb", the "specs" list, the
+// "price" it was built for, and "photo" (upload an image to your
+// repo, e.g. photo: "builds/king95.jpg"). Until a photo is added,
+// a labeled placeholder shows. Add more entries here as you build.
+// ============================================================
+const SHOWCASE = [
+  { name: "Build One",
+    blurb: "Describe this build — the theme, the standout details, what it was made for.",
+    specs: ["Ryzen 7 9800X3D", "RTX 5070 Ti Apocalypse", "32GB DDR5-6000", "Montech King 95 PRO"],
+    price: 2090, photo: "" },
+  { name: "Build Two",
+    blurb: "Describe this build — the theme, the standout details, what it was made for.",
+    specs: ["CPU", "GPU", "Memory", "Case"],
+    price: 0, photo: "" },
+  { name: "Build Three",
+    blurb: "Describe this build — the theme, the standout details, what it was made for.",
+    specs: ["CPU", "GPU", "Memory", "Case"],
+    price: 0, photo: "" },
+];
+
+// ---- CUSTOM TIERS — what TechZone offers, from standard to showpiece. ----
+const TIERS = [
+  {
+    name: "Standard", lead: "Configured & built to order",
+    body: "Pick your parts in the builder and we handle the rest. Hand-assembled, fully cable-managed, BIOS and memory tuned, clean driver install, and a 48-hour stress test before it ships.",
+    points: ["Any new parts you want", "Full cable management", "Tuned & stress-tested", "3-year labor warranty"],
+  },
+  {
+    name: "Custom", lead: "Aesthetic & cooling upgrades", featured: true,
+    body: "Everything in Standard, plus the details that make a build yours: custom sleeved cables and combs, color-matched themes, vertical GPU mounts, fan and lighting overhauls, and soft-tube custom loops.",
+    points: ["Custom sleeved cables", "Themed color schemes", "Vertical GPU mounting", "Soft-tube water loops"],
+  },
+  {
+    name: "Showpiece", lead: "Full bespoke, no limits",
+    body: "The top tier. Hardline custom loops, distribution plates, laser-etched water blocks, custom paint, and one-of-a-kind themes. These are collaborative, quote-based projects — we plan it together from a blank canvas.",
+    points: ["Hardline rigid loops", "Distro plates", "Laser-etched blocks", "Custom paint & themes"],
+  },
+];
+
+const PROCESS_STEPS = [
+  { n: "01", title: "You design it", body: "Pick every part with live pricing and instant compatibility checks, or start from one of our ready-to-ship builds." },
+  { n: "02", title: "We build it right", body: "Hand assembly, full cable management, BIOS and memory tuning (EXPO/XMP), and a clean driver install." },
+  { n: "03", title: "We test it hard", body: "Every build runs a 48-hour stress and thermal soak — CPU, GPU, and memory — before it's allowed to ship." },
+  { n: "04", title: "It ships to you", body: "Double-boxed with foam GPU support, ready to game out of the box. Backed by a 3-year labor warranty." },
+];
+
+const ASSEMBLY_FEE = 149;
+const fmt = (n) => "$" + n.toLocaleString("en-US");
+
+/* ============================================================
+   IMAGE COMPONENTS (product photos with graceful placeholders)
+   ============================================================ */
+function PartImage({ part, size }) {
+  const [failed, setFailed] = useState(false);
+  const show = part && part.img && !failed;
+  if (show) {
+    return <img src={part.img} alt={part.name} className={"tz-pimg " + (size || "")} onError={() => setFailed(true)} />;
+  }
+  return (
+    <div className={"tz-pimg tz-pimg-ph " + (size || "")}>
+      <span className="tz-ph-brand">{part ? part.brand : ""}</span>
+      <span className="tz-ph-icon">▚</span>
+      <span className="tz-ph-name">{part ? part.name : "Not selected"}</span>
+    </div>
+  );
+}
+
+function ShowcaseImage({ build }) {
+  const [failed, setFailed] = useState(false);
+  if (build.photo && !failed) {
+    return <img src={build.photo} alt={build.name + " build"} className="tz-show-photo" onError={() => setFailed(true)} />;
+  }
+  return (
+    <div className="tz-show-ph">
+      <span className="tz-show-ph-mark">▚</span>
+      <span className="tz-show-ph-text">Add a photo of "{build.name}"</span>
+      <span className="tz-show-ph-sub">replace in the SHOWCASE data</span>
+    </div>
+  );
+}
+
+/* ============================================================
+   COMPATIBILITY ENGINE
+   ============================================================ */
+function checkCompatibility(build) {
+  const issues = [];
+  const { cpu, mobo, ram, gpu, psu } = build;
+  if (cpu && mobo && cpu.socket !== mobo.socket) issues.push({ level: "error", text: cpu.name + " (" + cpu.socket + ") doesn't fit " + mobo.name + " (" + mobo.socket + ")." });
+  if (ram && mobo && ram.mem !== mobo.mem) issues.push({ level: "error", text: ram.name + " is " + ram.mem + "; " + mobo.name + " needs " + mobo.mem + "." });
+  if (psu && (cpu || gpu)) {
+    const draw = (cpu?.tdp || 0) + (gpu?.power || 0) + 150;
+    const headroom = psu.watts - draw;
+    if (headroom < 0) issues.push({ level: "error", text: "Estimated draw (~" + draw + "W) exceeds the " + psu.watts + "W supply." });
+    else if (headroom < 150) issues.push({ level: "warn", text: "Power headroom is tight (~" + headroom + "W spare). Consider a larger supply." });
+  }
+  return issues;
+}
+
+/* ============================================================
+   CUSTOM & SHOWPIECE SECTION (tiers + inquiry form)
+   ============================================================ */
+function CustomSection() {
+  const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", budget: "", tier: "Custom", cooling: "", timeline: "", vision: "" });
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const submit = () => {
+    const subject = encodeURIComponent("TechZone custom build inquiry — " + form.tier + " — " + (form.name || "New"));
+    const body = encodeURIComponent(
+      "Tier: " + form.tier + "\nBudget: " + form.budget + "\nCooling: " + form.cooling +
+      "\nTimeline: " + form.timeline + "\n\nVision:\n" + form.vision + "\n\n— " + form.name + "\n" + form.email
+    );
+    window.location.href = "mailto:" + CONTACT.email + "?subject=" + subject + "&body=" + body;
+    setSent(true);
+  };
+  return (
+    <section className="tz-custom" id="custom">
+      <div className="tz-section-head" style={{ textAlign: "center" }}>
+        <div className="tz-hero-eyebrow">CUSTOM &amp; SHOWPIECE</div>
+        <h2 className="tz-section-title">From clean &amp; simple to full bespoke.</h2>
+        <p className="tz-custom-intro">Every TechZone build is made to order. Standard builds you can spec yourself — custom and showpiece work we plan together. Here's the range.</p>
+      </div>
+
+      <div className="tz-tiers">
+        {TIERS.map((t) => (
+          <div key={t.name} className={"tz-tier " + (t.featured ? "tz-tier-featured" : "")}>
+            {t.featured && <span className="tz-tier-flag">Most requested</span>}
+            <h3 className="tz-tier-name">{t.name}</h3>
+            <div className="tz-tier-lead">{t.lead}</div>
+            <p className="tz-tier-body">{t.body}</p>
+            <ul className="tz-tier-points">{t.points.map((p) => <li key={p}>{p}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="tz-inquiry">
+        <div className="tz-inquiry-head">
+          <h3 className="tz-inquiry-title">Start a custom build</h3>
+          <p className="tz-inquiry-sub">Tell us the vision and we'll follow up with a plan and a quote — or just call and we'll talk it through.</p>
+        </div>
+        <div className="tz-inquiry-grid">
+          <input className="tz-input" placeholder="Your name" value={form.name} onChange={set("name")} />
+          <input className="tz-input" placeholder="Your email" value={form.email} onChange={set("email")} />
+          <select className="tz-input" value={form.tier} onChange={set("tier")}>
+            <option>Standard</option><option>Custom</option><option>Showpiece</option><option>Not sure yet</option>
+          </select>
+          <input className="tz-input" placeholder="Budget range (e.g. $2–3k)" value={form.budget} onChange={set("budget")} />
+          <select className="tz-input" value={form.cooling} onChange={set("cooling")}>
+            <option value="">Cooling preference…</option><option>Air / AIO</option><option>Soft-tube loop</option><option>Hardline loop</option><option>Not sure</option>
+          </select>
+          <input className="tz-input" placeholder="Timeline (e.g. no rush / 1 month)" value={form.timeline} onChange={set("timeline")} />
+          <textarea className="tz-input tz-textarea tz-inq-full" placeholder="Describe the vision — theme, colors, parts, what it's for…" value={form.vision} onChange={set("vision")} />
+        </div>
+        <div className="tz-inquiry-actions">
+          <button className="tz-home-build" onClick={submit}>{sent ? "Opening your email…" : "Send inquiry"}</button>
+          <a className="tz-call-btn" href={"tel:" + CONTACT.phone.replace(/[^0-9]/g, "")}>Or call {CONTACT.phone}</a>
+        </div>
+        <p className="tz-form-note">Sending opens your email app with everything filled in. Prefer to talk? Call or text anytime during hours.</p>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   CONTACT SECTION
+   ============================================================ */
+function ContactSection() {
+  const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const onChange = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const submit = () => {
+    // Opens the visitor's email client pre-filled. No backend needed.
+    const subject = encodeURIComponent("TechZone build inquiry — " + (form.name || "New customer"));
+    const body = encodeURIComponent((form.message || "") + "\n\n— " + form.name + "\n" + form.email);
+    window.location.href = "mailto:" + CONTACT.email + "?subject=" + subject + "&body=" + body;
+    setSent(true);
+  };
+  return (
+    <section className="tz-contact" id="contact">
+      <div className="tz-section-head" style={{ textAlign: "center" }}>
+        <div className="tz-hero-eyebrow">GET IN TOUCH</div>
+        <h2 className="tz-section-title">Questions? Custom request?</h2>
+        <p className="tz-contact-intro">Tell us what you're after and we'll help you spec it. Real builder, real reply — no call centers.</p>
+      </div>
+      <div className="tz-contact-grid">
+        <div className="tz-contact-info">
+          <div className="tz-ci-row"><span className="tz-ci-label">Email</span><a href={"mailto:" + CONTACT.email} className="tz-ci-val">{CONTACT.email}</a></div>
+          <div className="tz-ci-row"><span className="tz-ci-label">Phone</span><a href={"tel:" + CONTACT.phone.replace(/[^0-9]/g, "")} className="tz-ci-val">{CONTACT.phone}</a></div>
+          <div className="tz-ci-row"><span className="tz-ci-label">Based in</span><span className="tz-ci-val">{CONTACT.location}</span></div>
+          <div className="tz-ci-row"><span className="tz-ci-label">Hours</span><span className="tz-ci-val">{CONTACT.hours}</span></div>
+          <div className="tz-ci-row"><span className="tz-ci-label">Instagram</span><span className="tz-ci-val">{CONTACT.instagram}</span></div>
+        </div>
+        <div className="tz-contact-form">
+          <input className="tz-input" placeholder="Your name" value={form.name} onChange={onChange("name")} />
+          <input className="tz-input" placeholder="Your email" value={form.email} onChange={onChange("email")} />
+          <textarea className="tz-input tz-textarea" placeholder="What are you looking to build?" value={form.message} onChange={onChange("message")} />
+          <button className="tz-home-build" style={{ width: "100%" }} onClick={submit}>
+            {sent ? "Opening your email…" : "Send message"}
+          </button>
+          <p className="tz-form-note">This opens your email app with the message ready to send.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   CURATED PAGE (custom build tiers + inquiry) — routed
+   ============================================================ */
+function CustomPage() {
+  return (
+    <React.Fragment>
+      <div className="tz-hero">
+        <div className="tz-hero-eyebrow">CUSTOM &amp; SHOWPIECE BUILDS</div>
+        <h1 className="tz-hero-title">Custom builds, your way.</h1>
+        <p className="tz-hero-sub">
+          From clean standard builds to full showpiece projects. Tell us the vision below
+          and we'll follow up with a plan and a quote.
+        </p>
+      </div>
+      <CustomSection />
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   CONTACT PAGE — routed
+   ============================================================ */
+function ContactPage() {
+  return (
+    <React.Fragment>
+      <div className="tz-hero">
+        <div className="tz-hero-eyebrow">GET IN TOUCH</div>
+        <h1 className="tz-hero-title">Talk to a real builder.</h1>
+        <p className="tz-hero-sub">
+          Questions, a custom request, or just want advice on parts? Reach out —
+          a real builder answers, not a call center.
+        </p>
+      </div>
+      <ContactSection />
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   HOME PAGE
+   ============================================================ */
+function HomePage({ onBuild, onCustom }) {
+  return (
+    <div className="tz-home">
+      <section className="tz-home-hero">
+        <div className="tz-home-hero-copy">
+          <div className="tz-hero-eyebrow">CUSTOM PCS · ASSEMBLED &amp; STRESS-TESTED IN-HOUSE</div>
+          <h1 className="tz-home-title">Your parts.<br/>Our bench.<br/><span>Zero compromises.</span></h1>
+          <p className="tz-home-sub">
+            TechZone builds custom desktops to your exact spec — new parts only, tuned,
+            cable-managed, and put through a 48-hour stress test before it ever leaves the shop.
+            Design it in 3D, pick your lighting, and we'll handle the rest.
+          </p>
+          <div className="tz-home-cta-row">
+            <button className="tz-home-build" onClick={onBuild}>Build now →</button>
+            <button className="tz-home-secondary" onClick={() => document.getElementById("showcase")?.scrollIntoView({ behavior: "smooth" })}>See builds</button>
+          </div>
+          <div className="tz-home-stats">
+            <div><span className="tz-stat-num">48h</span><span className="tz-stat-label">Stress tested</span></div>
+            <div><span className="tz-stat-num">3yr</span><span className="tz-stat-label">Labor warranty</span></div>
+            <div><span className="tz-stat-num">5–7d</span><span className="tz-stat-label">Build &amp; ship</span></div>
+          </div>
+        </div>
+        <div className="tz-home-hero-viz">
+          <ShowcaseImage build={{ name: "your flagship", photo: HERO_PHOTO }} />
+        </div>
+      </section>
+
+      <section className="tz-process">
+        <div className="tz-section-head"><div className="tz-hero-eyebrow">HOW IT WORKS</div><h2 className="tz-section-title">Built like we'd build our own.</h2></div>
+        <div className="tz-process-grid">
+          {PROCESS_STEPS.map((s) => (
+            <div key={s.n} className="tz-process-card">
+              <span className="tz-process-num">{s.n}</span>
+              <h3 className="tz-process-title">{s.title}</h3>
+              <p className="tz-process-body">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="tz-showcase" id="builds">
+        <div className="tz-section-head"><div className="tz-hero-eyebrow">OUR BUILDS</div><h2 className="tz-section-title">Machines we've built.</h2></div>
+        <div className="tz-showcase-grid">
+          {SHOWCASE.map((b) => (
+            <div key={b.name} className="tz-show-card">
+              <div className="tz-show-viz">
+                <ShowcaseImage build={b} />
+              </div>
+              <div className="tz-show-body">
+                <div className="tz-show-top"><h3 className="tz-show-name">{b.name}</h3>{b.price ? <span className="tz-show-price">from {fmt(b.price)}</span> : null}</div>
+                <p className="tz-show-blurb">{b.blurb}</p>
+                <ul className="tz-show-specs">{b.specs.map((s) => <li key={s}>{s}</li>)}</ul>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="tz-closing">
+        <h2 className="tz-closing-title">Ready to spec yours?</h2>
+        <p className="tz-closing-sub">Configure a standard build yourself, or start a custom project with us.</p>
+        <div className="tz-home-cta-row" style={{ justifyContent: "center" }}>
+          <button className="tz-home-build" onClick={onBuild}>Start building →</button>
+          <button className="tz-home-secondary" onClick={onCustom}>Custom builds</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ============================================================
+   BUILDER PAGE
+   ============================================================ */
+function BuilderPage() {
+  const [selected, setSelected] = useState({});
+  const [active, setActive] = useState("cpu");
+
+  const build = useMemo(() => {
+    const b = {};
+    for (const k of Object.keys(selected)) { const item = CATALOG[k]?.find((x) => x.id === selected[k]); if (item) b[k] = item; }
+    return b;
+  }, [selected]);
+
+  const subtotal = useMemo(() => Object.values(build).reduce((s, x) => s + x.price, 0), [build]);
+  const total = subtotal > 0 ? subtotal + ASSEMBLY_FEE : 0;
+  const issues = useMemo(() => checkCompatibility(build), [build]);
+  const errorCount = issues.filter((i) => i.level === "error").length;
+  const chosenCount = CATEGORY_META.filter((c) => build[c.key]).length;
+  const progress = Math.round((chosenCount / CATEGORY_META.length) * 100);
+  const select = useCallback((cat, id) => setSelected((s) => ({ ...s, [cat]: s[cat] === id ? undefined : id })), []);
+
+  return (
+    <React.Fragment>
+      <div className="tz-hero">
+        <div className="tz-hero-eyebrow">CUSTOM BUILD · NEW PARTS ONLY</div>
+        <h1 className="tz-hero-title">Design it. We'll build it.</h1>
+        <p className="tz-hero-sub">Pick every part, watch it come together in 3D, and choose your lighting. We assemble, stress-test, and ship it to your door.</p>
+      </div>
+      <div className="tz-main">
+        <section className="tz-catalog">
+          <div className="tz-cat-tabs">
+            {CATEGORY_META.map((c) => (
+              <button key={c.key} className={"tz-tab " + (active === c.key ? "tz-tab-on " : "") + (build[c.key] ? "tz-tab-filled" : "")} onClick={() => setActive(c.key)}>
+                <span className="tz-tab-label">{c.label}</span>{build[c.key] && <span className="tz-tab-check">✓</span>}
+              </button>
+            ))}
+          </div>
+          <div className="tz-parts">
+            {CATALOG[active].map((part) => {
+              const on = selected[active] === part.id;
+              return (
+                <button key={part.id} className={"tz-part " + (on ? "tz-part-on" : "")} onClick={() => select(active, part.id)}>
+                  <div className="tz-part-thumb"><PartImage part={part} size="thumb" /></div>
+                  <div className="tz-part-info">
+                    <div className="tz-part-top"><span className="tz-part-brand">{part.brand}</span>{part.tag && <span className="tz-part-tag">{part.tag}</span>}</div>
+                    <div className="tz-part-name">{part.name}</div>
+                    <div className="tz-part-bottom"><span className="tz-part-price">{fmt(part.price)}</span><span className={"tz-part-pick " + (on ? "tz-part-pick-on" : "")}>{on ? "Selected" : "Select"}</span></div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="tz-stage">
+          <div className="tz-stage-head">
+            <span>Your build</span>
+            <span className="tz-stage-count">{chosenCount}/{CATEGORY_META.length} parts</span>
+          </div>
+          <div className="tz-build-grid">
+            {CATEGORY_META.map((c) => (
+              <button key={c.key} className={"tz-bg-cell " + (active === c.key ? "tz-bg-active " : "") + (build[c.key] ? "tz-bg-filled" : "")} onClick={() => setActive(c.key)}>
+                <div className="tz-bg-imgwrap"><PartImage part={build[c.key]} size="grid" /></div>
+                <span className="tz-bg-cat">{c.label}</span>
+                <span className="tz-bg-name">{build[c.key] ? build[c.key].name : "Choose"}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <aside className="tz-summary">
+          <div className="tz-progress">
+            <div className="tz-progress-row"><span>Build progress</span><span className="tz-progress-pct">{progress}%</span></div>
+            <div className="tz-progress-bar"><div className="tz-progress-fill" style={{ width: progress + "%" }} /></div>
+          </div>
+          <div className="tz-sum-list">
+            {CATEGORY_META.map((c) => (
+              <div key={c.key} className={"tz-sum-row " + (build[c.key] ? "" : "tz-sum-empty")} onClick={() => setActive(c.key)}>
+                <span className="tz-sum-cat">{c.label}</span>
+                <span className="tz-sum-val">{build[c.key] ? build[c.key].name : "Not selected"}</span>
+                <span className="tz-sum-price">{build[c.key] ? fmt(build[c.key].price) : "—"}</span>
+              </div>
+            ))}
+          </div>
+          {issues.length > 0 && (
+            <div className="tz-issues">
+              {issues.map((i, n) => (<div key={n} className={"tz-issue tz-issue-" + i.level}><span className="tz-issue-dot" />{i.text}</div>))}
+            </div>
+          )}
+          <div className="tz-totals">
+            <div className="tz-total-row"><span>Parts subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div className="tz-total-row tz-total-fee"><span>Assembly, cable management &amp; 48-hr stress test</span><span>{subtotal > 0 ? fmt(ASSEMBLY_FEE) : "—"}</span></div>
+            <div className="tz-total-row tz-total-grand"><span>Total</span><span>{fmt(total)}</span></div>
+          </div>
+          <button className="tz-checkout" disabled={chosenCount < CATEGORY_META.length || errorCount > 0}>
+            {errorCount > 0 ? "Resolve " + errorCount + " issue" + (errorCount > 1 ? "s" : "") : chosenCount < CATEGORY_META.length ? "Pick " + (CATEGORY_META.length - chosenCount) + " more part" + (CATEGORY_META.length - chosenCount > 1 ? "s" : "") : "Request this build"}
+          </button>
+          <p className="tz-checkout-note">Free 3-year labor warranty · Ships in 5–7 business days</p>
+        </aside>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   ROOT
+   ============================================================ */
+function TechZoneApp() {
+  const [view, setView] = useState("home");
+  const go = (v) => { setView(v); window.scrollTo(0, 0); };
+  return (
+    <div className="tz-root">
+      <style>{CSS}</style>
+      <header className="tz-header">
+        <div className="tz-logo" onClick={() => go("home")} style={{ cursor: "pointer" }}>
+          <span className="tz-logo-mark">▚</span><span className="tz-logo-text">TECH<span>ZONE</span></span>
+        </div>
+        <nav className="tz-nav">
+          <span className={"tz-nav-link " + (view === "home" ? "tz-active" : "")} onClick={() => go("home")}>Home</span>
+          <span className={"tz-nav-link " + (view === "builder" ? "tz-active" : "")} onClick={() => go("builder")}>Builder</span>
+          <span className={"tz-nav-link " + (view === "custom" ? "tz-active" : "")} onClick={() => go("custom")}>Custom</span>
+          <span className={"tz-nav-link " + (view === "contact" ? "tz-active" : "")} onClick={() => go("contact")}>Contact</span>
+        </nav>
+        <div className="tz-header-cta"><button className="tz-header-build" onClick={() => go("builder")}>Build now</button></div>
+      </header>
+      {view === "home" ? <HomePage onBuild={() => go("builder")} onCustom={() => go("custom")} />
+        : view === "builder" ? <BuilderPage />
+        : view === "custom" ? <CustomPage />
+        : <ContactPage />}
+    </div>
+  );
+}
+
+const CSS = `
+.tz-root { --ink:#0B0E13; --panel:#131820; --panel2:#0F141B; --line:#222C39; --text:#E8EDF4; --muted:#8A97A8; --cyan:#36E0C8; --amber:#F5A623; --red:#FF5C5C; font-family:'Inter',system-ui,sans-serif; background:var(--ink); color:var(--text); min-height:100vh; width:100%; }
+.tz-root *{box-sizing:border-box;}
+.tz-header{ display:flex; align-items:center; gap:32px; padding:18px 28px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,14,19,.9); backdrop-filter:blur(8px); z-index:10; }
+.tz-logo{display:flex; align-items:center; gap:10px;}
+.tz-logo-mark{color:var(--cyan); font-size:22px; transform:translateY(-1px);}
+.tz-logo-text{font-family:'Chakra Petch'; font-weight:700; letter-spacing:2px; font-size:18px;}
+.tz-logo-text span{color:var(--cyan);}
+.tz-nav{display:flex; gap:24px; flex:1;}
+.tz-nav-link{font-family:'Chakra Petch'; font-size:13px; letter-spacing:1px; color:var(--muted); cursor:pointer; text-transform:uppercase;}
+.tz-nav-link.tz-active{color:var(--text);}
+.tz-nav-link:hover{color:var(--text);}
+.tz-header-build{ background:var(--cyan); color:#04110f; border:none; border-radius:7px; font-family:'Chakra Petch'; font-weight:700; font-size:12px; letter-spacing:1px; padding:9px 16px; cursor:pointer; text-transform:uppercase; transition:.15s; }
+.tz-header-build:hover{background:#4ff0d8; box-shadow:0 0 18px -4px var(--cyan);}
+.tz-hero{padding:34px 28px 22px; border-bottom:1px solid var(--line);}
+.tz-hero-eyebrow{font-family:'Chakra Petch'; font-size:11px; letter-spacing:3px; color:var(--cyan); margin-bottom:12px;}
+.tz-hero-title{font-family:'Chakra Petch'; font-weight:700; font-size:38px; margin:0 0 8px; letter-spacing:-.5px;}
+.tz-hero-sub{color:var(--muted); max-width:560px; font-size:14px; line-height:1.6; margin:0;}
+.tz-main{ display:grid; grid-template-columns:1fr 1.15fr .85fr; gap:1px; background:var(--line); min-height:600px; }
+.tz-catalog,.tz-stage,.tz-summary{background:var(--ink);}
+.tz-catalog{padding:20px; display:flex; flex-direction:column;}
+.tz-cat-tabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px;}
+.tz-tab{ display:flex; align-items:center; gap:6px; padding:7px 12px; border:1px solid var(--line); background:var(--panel); color:var(--muted); font-family:'Chakra Petch'; font-size:12px; letter-spacing:.5px; border-radius:7px; cursor:pointer; transition:.15s; }
+.tz-tab:hover{border-color:#33414f; color:var(--text);}
+.tz-tab-on{border-color:var(--cyan); color:var(--text); background:#0d1f1d;}
+.tz-tab-filled .tz-tab-check{color:var(--cyan); font-size:11px;}
+.tz-parts{display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:600px; padding-right:4px;}
+.tz-part{ display:flex; gap:14px; align-items:stretch; text-align:left; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px; cursor:pointer; transition:.15s; color:var(--text); }
+.tz-part:hover{border-color:#33414f; transform:translateY(-1px);}
+.tz-part-on{border-color:var(--cyan); background:#0c1a19; box-shadow:0 0 0 1px var(--cyan) inset;}
+.tz-part-thumb{width:72px; height:72px; flex-shrink:0; border-radius:8px; overflow:hidden; background:#0c1118;}
+.tz-part-info{flex:1; display:flex; flex-direction:column; min-width:0;}
+.tz-part-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;}
+.tz-part-brand{font-family:'Chakra Petch'; font-size:11px; letter-spacing:1px; color:var(--muted); text-transform:uppercase;}
+.tz-part-tag{font-size:10px; font-family:'Chakra Petch'; letter-spacing:.5px; color:var(--cyan); border:1px solid var(--cyan); border-radius:20px; padding:2px 8px;}
+.tz-part-name{font-size:13.5px; font-weight:500; margin-bottom:auto; line-height:1.35;}
+.tz-part-bottom{display:flex; justify-content:space-between; align-items:center; margin-top:8px;}
+.tz-part-price{font-family:'Chakra Petch'; font-weight:600; font-size:16px;}
+.tz-part-pick{font-size:12px; font-family:'Chakra Petch'; letter-spacing:.5px; color:var(--muted);}
+.tz-part-pick-on{color:var(--cyan);}
+
+/* Product image + placeholder */
+.tz-pimg{width:100%; height:100%; object-fit:contain; display:block;}
+.tz-pimg-ph{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:radial-gradient(circle at 50% 35%, #161d27, #0c1118 75%); text-align:center; padding:6px;}
+.tz-pimg-ph .tz-ph-icon{color:var(--cyan); font-size:18px; opacity:.55;}
+.tz-pimg-ph .tz-ph-brand{font-family:'Chakra Petch'; font-size:8px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+.tz-pimg-ph .tz-ph-name{font-size:8px; color:#5a6675; line-height:1.2; max-width:90%;}
+.tz-pimg.grid.tz-pimg-ph .tz-ph-name{font-size:10px;}
+.tz-pimg.grid.tz-pimg-ph .tz-ph-icon{font-size:26px;}
+
+/* Builder centerpiece — grid of selected parts */
+.tz-stage{padding:20px; display:flex; flex-direction:column; gap:14px;}
+.tz-stage-head{display:flex; justify-content:space-between; align-items:center; font-family:'Chakra Petch'; font-size:13px; letter-spacing:1px; text-transform:uppercase;}
+.tz-stage-count{color:var(--cyan); font-size:12px;}
+.tz-build-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; align-content:start;}
+.tz-bg-cell{ display:flex; flex-direction:column; gap:6px; border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:12px; cursor:pointer; transition:.15s; color:var(--text); text-align:left; }
+.tz-bg-cell:hover{border-color:#33414f; transform:translateY(-2px);}
+.tz-bg-active{border-color:var(--cyan);}
+.tz-bg-filled{background:#0c1a19;}
+.tz-bg-imgwrap{width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#0c1118; margin-bottom:2px;}
+.tz-bg-cat{font-family:'Chakra Petch'; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+.tz-bg-name{font-size:12px; line-height:1.3; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.tz-summary{padding:20px; display:flex; flex-direction:column; gap:18px;}
+.tz-progress-row{display:flex; justify-content:space-between; font-family:'Chakra Petch'; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px;}
+.tz-progress-pct{color:var(--cyan);}
+.tz-progress-bar{height:5px; background:var(--panel); border-radius:20px; overflow:hidden;}
+.tz-progress-fill{height:100%; background:var(--cyan); transition:width .3s;}
+.tz-sum-list{display:flex; flex-direction:column; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+.tz-sum-row{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:11px 13px; border-bottom:1px solid var(--line); cursor:pointer; transition:.12s;}
+.tz-sum-row:last-child{border-bottom:none;}
+.tz-sum-row:hover{background:var(--panel);}
+.tz-sum-cat{font-family:'Chakra Petch'; font-size:11px; letter-spacing:.5px; color:var(--muted); text-transform:uppercase; min-width:78px;}
+.tz-sum-val{font-size:12.5px; text-align:right; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.tz-sum-empty .tz-sum-val{color:#4d5969;}
+.tz-sum-price{font-family:'Chakra Petch'; font-size:13px; font-weight:600; min-width:54px; text-align:right;}
+.tz-issues{display:flex; flex-direction:column; gap:8px;}
+.tz-issue{display:flex; gap:9px; align-items:flex-start; font-size:12px; line-height:1.5; padding:10px 12px; border-radius:8px;}
+.tz-issue-dot{width:7px; height:7px; border-radius:50%; margin-top:5px; flex-shrink:0;}
+.tz-issue-error{background:rgba(255,92,92,.08); color:#ffb3b3;}
+.tz-issue-error .tz-issue-dot{background:var(--red);}
+.tz-issue-warn{background:rgba(245,166,35,.08); color:#f5d6a3;}
+.tz-issue-warn .tz-issue-dot{background:var(--amber);}
+.tz-totals{border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:9px;}
+.tz-total-row{display:flex; justify-content:space-between; font-size:13px; color:var(--muted);}
+.tz-total-fee{font-size:11.5px; line-height:1.4; gap:16px;}
+.tz-total-grand{font-family:'Chakra Petch'; font-size:20px; font-weight:700; color:var(--text); padding-top:6px;}
+.tz-checkout{ width:100%; padding:14px; border:none; border-radius:10px; background:var(--cyan); color:#04110f; font-family:'Chakra Petch'; font-weight:700; font-size:14px; letter-spacing:1px; cursor:pointer; transition:.15s; text-transform:uppercase; }
+.tz-checkout:hover:not(:disabled){background:#4ff0d8; box-shadow:0 0 24px -4px var(--cyan);}
+.tz-checkout:disabled{background:var(--panel); color:var(--muted); cursor:not-allowed;}
+.tz-checkout-note{text-align:center; font-size:11px; color:var(--muted); margin:0;}
+.tz-home{display:flex; flex-direction:column;}
+.tz-home-hero{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; padding:56px 28px 48px; border-bottom:1px solid var(--line); }
+.tz-home-title{ font-family:'Chakra Petch'; font-weight:700; font-size:54px; line-height:1.02; margin:14px 0 18px; letter-spacing:-1px; }
+.tz-home-title span{color:var(--cyan);}
+.tz-home-sub{color:var(--muted); font-size:15px; line-height:1.7; max-width:480px; margin:0 0 26px;}
+.tz-home-cta-row{display:flex; gap:12px; margin-bottom:34px; flex-wrap:wrap;}
+.tz-home-build{ background:var(--cyan); color:#04110f; border:none; border-radius:9px; font-family:'Chakra Petch'; font-weight:700; font-size:15px; letter-spacing:1px; padding:14px 26px; cursor:pointer; text-transform:uppercase; transition:.15s; }
+.tz-home-build:hover{background:#4ff0d8; box-shadow:0 0 28px -4px var(--cyan); transform:translateY(-1px);}
+.tz-home-secondary{ background:none; color:var(--text); border:1px solid var(--line); border-radius:9px; font-family:'Chakra Petch'; font-weight:600; font-size:15px; letter-spacing:1px; padding:14px 24px; cursor:pointer; text-transform:uppercase; transition:.15s; }
+.tz-home-secondary:hover{border-color:var(--cyan); color:var(--cyan);}
+.tz-home-stats{display:flex; gap:40px;}
+.tz-home-stats > div{display:flex; flex-direction:column; gap:4px;}
+.tz-stat-num{font-family:'Chakra Petch'; font-weight:700; font-size:28px; color:var(--cyan);}
+.tz-stat-label{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-family:'Chakra Petch';}
+.tz-home-hero-viz{ position:relative; height:440px; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:radial-gradient(circle at 50% 40%, #141b24, #0b0e13 70%); }
+.tz-home-hero-viz .tz-show-photo,.tz-home-hero-viz .tz-show-ph{height:100%;}
+.tz-section-head{padding:0 0 26px;}
+.tz-section-title{font-family:'Chakra Petch'; font-weight:700; font-size:32px; margin:10px 0 0; letter-spacing:-.5px;}
+.tz-process{padding:54px 28px; border-bottom:1px solid var(--line);}
+.tz-process-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+.tz-process-card{border:1px solid var(--line); border-radius:12px; padding:22px; background:var(--panel); transition:.15s;}
+.tz-process-card:hover{border-color:#33414f; transform:translateY(-2px);}
+.tz-process-num{font-family:'Chakra Petch'; font-weight:700; font-size:13px; color:var(--cyan); letter-spacing:2px;}
+.tz-process-title{font-family:'Chakra Petch'; font-size:17px; font-weight:600; margin:14px 0 8px;}
+.tz-process-body{color:var(--muted); font-size:13px; line-height:1.6; margin:0;}
+.tz-prebuilts{padding:54px 28px; border-bottom:1px solid var(--line);}
+.tz-pb-head{display:flex; justify-content:space-between; align-items:flex-end; gap:24px;}
+.tz-pb-headnote{color:var(--muted); font-size:13px; max-width:320px; margin:0; line-height:1.6;}
+.tz-pb-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+.tz-pb-card{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel); display:flex; flex-direction:column; transition:.15s;}
+.tz-pb-card:hover{border-color:#33414f; transform:translateY(-3px);}
+.tz-pb-imgwrap{position:relative; height:210px; background:radial-gradient(circle at 50% 45%, #151c26, #0b0e13 72%); border-bottom:1px solid var(--line);}
+.tz-pb-img{width:100%; height:100%; object-fit:contain; display:block;}
+.tz-pb-ph{width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:16px;}
+.tz-pb-ph-mark{color:var(--cyan); font-size:28px; opacity:.5;}
+.tz-pb-ph-sub{font-size:11px; color:var(--muted);}
+.tz-pb-badge{position:absolute; top:12px; left:12px; z-index:2; font-family:'Chakra Petch'; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#04110f; background:var(--cyan); border-radius:20px; padding:4px 10px; font-weight:700;}
+.tz-pb-body{padding:18px; display:flex; flex-direction:column; flex:1;}
+.tz-pb-name{font-family:'Chakra Petch'; font-weight:700; font-size:20px; margin:0 0 14px; letter-spacing:.5px;}
+.tz-pb-specs{display:flex; flex-direction:column; gap:7px; margin-bottom:18px;}
+.tz-pb-spec{display:grid; grid-template-columns:84px 1fr; gap:8px; font-size:12.5px;}
+.tz-pb-spec-k{font-family:'Chakra Petch'; font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); padding-top:1px;}
+.tz-pb-spec-v{color:var(--text);}
+.tz-pb-foot{margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end; gap:12px; padding-top:14px; border-top:1px solid var(--line);}
+.tz-pb-pricing{display:flex; flex-direction:column;}
+.tz-pb-was{font-size:12px; color:var(--muted); text-decoration:line-through;}
+.tz-pb-price{font-family:'Chakra Petch'; font-weight:700; font-size:22px; color:var(--text);}
+.tz-pb-btn{background:var(--cyan); color:#04110f; border:none; border-radius:8px; font-family:'Chakra Petch'; font-weight:700; font-size:12px; letter-spacing:.5px; padding:10px 14px; cursor:pointer; text-transform:uppercase; transition:.15s; white-space:nowrap;}
+.tz-pb-btn:hover{background:#4ff0d8; box-shadow:0 0 18px -4px var(--cyan);}
+.tz-pb-tagline{color:var(--muted); font-size:12.5px; line-height:1.5; margin:-8px 0 14px;}
+.tz-pb-fromlabel{font-family:'Chakra Petch'; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+
+/* Custom & showpiece */
+.tz-custom{padding:56px 28px; border-bottom:1px solid var(--line);}
+.tz-custom-intro{color:var(--muted); font-size:14px; line-height:1.6; max-width:540px; margin:12px auto 0;}
+.tz-tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:34px 0 40px;}
+.tz-tier{position:relative; border:1px solid var(--line); border-radius:14px; padding:24px; background:var(--panel); display:flex; flex-direction:column;}
+.tz-tier-featured{border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan) inset;}
+.tz-tier-flag{position:absolute; top:-10px; left:24px; font-family:'Chakra Petch'; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#04110f; background:var(--cyan); border-radius:20px; padding:3px 10px; font-weight:700;}
+.tz-tier-name{font-family:'Chakra Petch'; font-weight:700; font-size:24px; margin:0 0 4px; letter-spacing:.5px;}
+.tz-tier-lead{font-family:'Chakra Petch'; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:14px;}
+.tz-tier-body{color:var(--muted); font-size:13px; line-height:1.65; margin:0 0 16px;}
+.tz-tier-points{list-style:none; padding:0; margin:auto 0 0; display:flex; flex-direction:column; gap:8px;}
+.tz-tier-points li{font-size:12.5px; color:var(--text); padding-left:18px; position:relative;}
+.tz-tier-points li:before{content:"▹"; position:absolute; left:0; color:var(--cyan);}
+
+.tz-inquiry{max-width:780px; margin:0 auto; border:1px solid var(--line); border-radius:16px; padding:28px; background:var(--panel);}
+.tz-inquiry-head{text-align:center; margin-bottom:20px;}
+.tz-inquiry-title{font-family:'Chakra Petch'; font-weight:700; font-size:22px; margin:0 0 6px;}
+.tz-inquiry-sub{color:var(--muted); font-size:13px; line-height:1.6; margin:0; max-width:480px; margin:0 auto;}
+.tz-inquiry-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.tz-inq-full{grid-column:1 / -1;}
+select.tz-input{appearance:none; cursor:pointer;}
+.tz-inquiry-actions{display:flex; gap:14px; align-items:center; justify-content:center; margin-top:18px; flex-wrap:wrap;}
+.tz-call-btn{font-family:'Chakra Petch'; font-weight:600; font-size:14px; letter-spacing:.5px; color:var(--text); text-decoration:none; border:1px solid var(--line); border-radius:9px; padding:13px 22px; transition:.15s;}
+.tz-call-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+.tz-showcase{padding:54px 28px; border-bottom:1px solid var(--line);}
+.tz-showcase-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+.tz-show-card{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel); transition:.15s;}
+.tz-show-card:hover{border-color:#33414f; transform:translateY(-3px);}
+.tz-show-viz{height:230px; background:radial-gradient(circle at 50% 45%, #151c26, #0b0e13 72%); border-bottom:1px solid var(--line);}
+.tz-show-photo{width:100%; height:100%; object-fit:cover; display:block;}
+.tz-show-ph{width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:16px;}
+.tz-show-ph-mark{color:var(--cyan); font-size:30px; opacity:.5;}
+.tz-show-ph-text{font-family:'Chakra Petch'; font-size:13px; letter-spacing:.5px; color:var(--text);}
+.tz-show-ph-sub{font-size:11px; color:var(--muted);}
+.tz-show-body{padding:18px;}
+.tz-show-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+.tz-show-name{font-family:'Chakra Petch'; font-weight:700; font-size:20px; margin:0; letter-spacing:.5px;}
+.tz-show-price{font-family:'Chakra Petch'; font-size:13px; color:var(--cyan); font-weight:600;}
+.tz-show-blurb{color:var(--muted); font-size:13px; line-height:1.55; margin:0 0 14px;}
+.tz-show-specs{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px;}
+.tz-show-specs li{font-size:12.5px; color:var(--text); padding-left:16px; position:relative;}
+.tz-show-specs li:before{content:"▹"; position:absolute; left:0; color:var(--cyan);}
+.tz-closing{padding:64px 28px; text-align:center; border-bottom:1px solid var(--line);}
+.tz-closing-title{font-family:'Chakra Petch'; font-weight:700; font-size:36px; margin:0 0 10px; letter-spacing:-.5px;}
+.tz-closing-sub{color:var(--muted); font-size:15px; margin:0 0 26px;}
+.tz-contact{padding:60px 28px;}
+.tz-contact-intro{color:var(--muted); font-size:14px; line-height:1.6; max-width:480px; margin:12px auto 0;}
+.tz-contact-grid{display:grid; grid-template-columns:1fr 1.3fr; gap:24px; max-width:880px; margin:34px auto 0;}
+.tz-contact-info{border:1px solid var(--line); border-radius:12px; padding:24px; background:var(--panel); display:flex; flex-direction:column; gap:16px;}
+.tz-ci-row{display:flex; flex-direction:column; gap:3px;}
+.tz-ci-label{font-family:'Chakra Petch'; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);}
+.tz-ci-val{font-size:14px; color:var(--text); text-decoration:none;}
+a.tz-ci-val:hover{color:var(--cyan);}
+.tz-contact-form{border:1px solid var(--line); border-radius:12px; padding:24px; background:var(--panel); display:flex; flex-direction:column; gap:12px;}
+.tz-input{ background:var(--ink); border:1px solid var(--line); border-radius:8px; padding:12px 14px; color:var(--text); font-family:'Inter',sans-serif; font-size:14px; outline:none; transition:.15s; }
+.tz-input:focus{border-color:var(--cyan);}
+.tz-textarea{min-height:110px; resize:vertical;}
+.tz-form-note{font-size:11px; color:var(--muted); text-align:center; margin:0;}
+.tz-footer{display:flex; justify-content:space-between; align-items:center; padding:26px 28px; border-top:1px solid var(--line);}
+.tz-footer-meta{font-size:12px; color:var(--muted); font-family:'Chakra Petch'; letter-spacing:.5px;}
+@media (max-width:1080px){
+  .tz-main{grid-template-columns:1fr;}
+  .tz-build-grid{grid-template-columns:repeat(3,1fr);}
+  .tz-home-hero{grid-template-columns:1fr;}
+  .tz-home-hero-viz{height:340px;}
+  .tz-process-grid{grid-template-columns:repeat(2,1fr);}
+  .tz-showcase-grid{grid-template-columns:1fr;}
+  .tz-pb-grid{grid-template-columns:1fr;}
+  .tz-pb-head{flex-direction:column; align-items:flex-start; gap:10px;}
+  .tz-tiers{grid-template-columns:1fr;}
+  .tz-contact-grid{grid-template-columns:1fr;}
+}
+@media (max-width:560px){
+  .tz-hero-title{font-size:28px;}
+  .tz-home-title{font-size:38px;}
+  .tz-header{gap:16px; padding:14px 16px;}
+  .tz-nav{display:none;}
+  .tz-home-stats{gap:24px;}
+  .tz-process-grid{grid-template-columns:1fr;}
+  .tz-inquiry-grid{grid-template-columns:1fr;}
+}
+`;
+
+ReactDOM.createRoot(document.getElementById("root")).render(<TechZoneApp />);
+</script>
+</body>
+</html>
